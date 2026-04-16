@@ -9,6 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class HomeController {
     @GetMapping()
     public String welcome(){
-        return "Welcome to Jenkins Demo Application!";
+        return "Welcome to Jenkins Demo Application! from updated jenkinsfile";
     }
 }
