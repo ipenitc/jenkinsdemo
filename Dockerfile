@@ -21,8 +21,7 @@ RUN ./gradlew test --no-daemon
 
 # 5. Build the JAR
 # We already ran tests, so we can package it now
-#RUN ./gradlew bootJar --no-daemon
-RUN ./gradlew bootJar -x test --no-daemon
+RUN ./gradlew bootJar --no-daemon
 
 # --- Stage 2: Runtime (The "Serving Plate") ---
 FROM eclipse-temurin:17-jre-jammy
