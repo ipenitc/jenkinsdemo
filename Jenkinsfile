@@ -55,19 +55,25 @@ pipeline {
         stage('Checkout') {
             steps { checkout scm }
         }
-        stage('Build & Test') {
-            steps {
-                script {
-                    // Build runs the tests (ensure Dockerfile does NOT have -x test)
-                    sh "docker build -t ${IMAGE_NAME}:${VERSION} -t ${IMAGE_NAME}:latest ."
-
-                    // Extract results for Jenkins UI
-                    sh "docker create --name extract-${env.BUILD_NUMBER} ${IMAGE_NAME}:${VERSION}"
-                    sh "docker cp extract-${env.BUILD_NUMBER}:/app/build/test-results ./build/"
-                    sh "docker rm extract-${env.BUILD_NUMBER}"
-                }
-            }
-        }
+     stage('Build & Test') {
+                 steps {
+                     script {
+                         try {
+                             // This will run the tests and likely fail (exit code 1)
+                             sh "docker build -t ${IMAGE_NAME}:${VERSION} -t ${IMAGE_NAME}:latest ."
+                         } finally {
+                             // This block runs EVEN IF the build above failed
+                             echo "Extracting test results..."
+                             // 1. Create a dummy container to access the files inside
+                             sh "docker create --name extract-${env.BUILD_NUMBER} ${IMAGE_NAME}:${VERSION} || true"
+                             // 2. Copy the results out to the Jenkins workspace
+                             sh "docker cp extract-${env.BUILD_NUMBER}:/app/build/test-results ./build/ || true"
+                             // 3. Clean up the dummy container
+                             sh "docker rm extract-${env.BUILD_NUMBER} || true"
+                         }
+                     }
+                 }
+             }
         stage('Push to Hub') {
             steps {
                 script {
@@ -80,10 +86,10 @@ pipeline {
         }
     }
     post {
-        always {
-            // Tell Jenkins where to find the extracted XML files
-            junit 'build/test-results/**/*.xml'
-            sh "docker rmi ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest || true"
+            always {
+                // This is what makes the "Tests" tab appear!
+                junit 'build/test-results/**/*.xml'
+                sh "docker rmi ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest || true"
+            }
         }
-    }
 }
