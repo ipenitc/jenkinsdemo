@@ -1,4 +1,4 @@
-# --- Stage 1: Build (The "Kitchen") ---
+# --- Stage 1: Build & Test (The "Kitchen") ---
 FROM eclipse-temurin:17-jdk-jammy AS builder
 WORKDIR /app
 
@@ -9,25 +9,35 @@ COPY build.gradle settings.gradle ./
 
 # 2. Fix permissions and download dependencies (cached layer)
 RUN chmod +x gradlew
+# Pre-download dependencies to speed up subsequent builds
 RUN ./gradlew dependencies --no-daemon
 
-# 3. Copy source code and build the JAR
+# 3. Copy source code
 COPY src src
-RUN ./gradlew bootJar -x test --no-daemon
+
+# 4. RUN TESTS
+# If tests fail, the build stops here. No image is created.
+RUN ./gradlew test --no-daemon
+
+# 5. Build the JAR
+# We already ran tests, so we can package it now
+RUN ./gradlew bootJar --no-daemon
 
 # --- Stage 2: Runtime (The "Serving Plate") ---
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
-# 4. Security: Run as a non-root user
+# 6. Security: Run as a non-root user
 RUN useradd -ms /bin/bash springuser
 USER springuser
 
-# 5. Copy the built JAR from the builder stage
-# Note: Spring Boot 3.3.5 puts the JAR in build/libs/
+# 7. Copy the built JAR from the builder stage
 COPY --from=builder /app/build/libs/*.jar app.jar
 
+# 8. Set the application port to 8081
+ENV SERVER_PORT=8081
 EXPOSE 8081
 
-# 6. Optimized entrypoint for containers
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
+# 9. Optimized entrypoint
+# The -Dserver.port=8081 ensures Spring Boot overrides any internal defaults
+ENTRYPOINT ["java", "-Dserver.port=8081", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
