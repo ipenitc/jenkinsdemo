@@ -67,13 +67,11 @@ pipeline {
             steps {
                 script {
                     try {
-                        // 1. Give execution permission to the wrapper
-                        sh "chmod +x gradlew"
-                        // 2. Run tests directly on the Jenkins agent
-                        sh "./gradlew test"
+                        // Use a standard Java image to run the tests
+                        // We mount the current folder (pwd) to /app inside the container
+                        sh "docker run --rm -v ${env.WORKSPACE}:/app -w /app eclipse-temurin:17-jdk-jammy ./gradlew test --no-daemon"
                     } finally {
-                        // This ensures that even if tests fail,
-                        // Jenkins tries to read the results for the UI
+                        // Because we mounted the volume, the XML files are now in your workspace!
                         junit '**/build/test-results/test/*.xml'
                     }
                 }
@@ -81,8 +79,8 @@ pipeline {
         }
 
         stage('Docker Build') {
-            // This stage only runs if the 'Unit Tests' stage passes
             steps {
+                // Now we build the final image (tests are already done)
                 sh "docker build -t ${IMAGE_NAME}:${VERSION} -t ${IMAGE_NAME}:latest ."
             }
         }
