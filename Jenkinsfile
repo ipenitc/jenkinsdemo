@@ -37,6 +37,8 @@ pipeline {
     post {
         always {
             sh "docker rmi ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest || true"
+            junit '**/build/test-results/test/*.xml'
+            sh "docker rmi ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest || true"
         }
     }
 }
