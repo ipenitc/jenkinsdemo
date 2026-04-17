@@ -27,7 +27,7 @@ USER springuser
 # Note: Spring Boot 3.3.5 puts the JAR in build/libs/
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-EXPOSE 8080
+EXPOSE 8081
 
 # 6. Optimized entrypoint for containers
 ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
