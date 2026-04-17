@@ -11,11 +11,11 @@ class JenkinsDemoApplicationTests {
     @Test
     void contextLoads() {
     }
-    @Test
-    void testMathSuccess() {
-        // A simple dummy test that always passes
-        assertEquals(10, 5 + 5, "5 + 5 should equal 10");
-    }
+//    @Test
+//    void testMathSuccess() {
+//        // A simple dummy test that always passes
+//        assertEquals(10, 5 + 5, "5 + 5 should equal 10");
+//    }
 //    @Test
 //    void testMathFailure() {
 //        // This will fail and stop your Jenkins pipeline
